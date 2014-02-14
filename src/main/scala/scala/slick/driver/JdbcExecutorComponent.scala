@@ -23,7 +23,9 @@ trait JdbcExecutorComponent extends SqlExecutorComponent { driver: JdbcDriver =>
 
     def run(implicit session: Backend#Session): R = (tree match {
       case rsm: ResultSetMapping =>
-        createQueryInvoker[Any, Any](rsm).buildColl(param)(session, rsm.nodeType.asCollectionType.cons.canBuildFrom)
+        val b = rsm.nodeType.asCollectionType.cons.createErasedBuilder
+        createQueryInvoker[Any, Any](rsm).foreach(param, { x => b += x }, 0)(session)
+        b.result()
       case First(rsm: ResultSetMapping) =>
         createQueryInvoker[Any, Any](rsm).first(param)
     }).asInstanceOf[R]
